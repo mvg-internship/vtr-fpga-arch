@@ -2,6 +2,17 @@
 #include "read_xml_arch_file.h"
 #include "device_grid.h"
 
+void print_PhysicalTileTypes(const std::vector<t_physical_tile_type> &PhysicalTileTypes){
+    std::cout << "**************************************" << std::endl;
+    std::cout << "----------PhysicalTileTypes-----------" << std::endl;
+    std::cout << "**************************************" << std::endl;
+    for (const t_physical_tile_type &obj : PhysicalTileTypes){
+        printf("name: %s\n", obj.name);
+        printf("\t_width: %d\n", obj.width);
+        printf("\t_height: %d\n", obj.height);
+    }
+}
+
 
 int main() {
     const char* arch_filename = "EArch.xml";
@@ -14,15 +25,7 @@ int main() {
 
     XmlReadArch(arch_filename, timing_enabled, &arch, PhysicalTileTypes, LogicalBlockTypes);
 
-    
-    std::cout << "**************************************" << std::endl;
-    std::cout << "----------PhysicalTileTypes-----------" << std::endl;
-    std::cout << "**************************************" << std::endl;
-    for (t_physical_tile_type &obj : PhysicalTileTypes){
-        printf("name: %s\n", obj.name);
-        printf("\t_width: %d\n", obj.width);
-        printf("\t_height: %d\n", obj.height);
-    }
+    print_PhysicalTileTypes(PhysicalTileTypes);
 
 
     return 0;
