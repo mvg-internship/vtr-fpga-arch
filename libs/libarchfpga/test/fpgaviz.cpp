@@ -125,48 +125,50 @@ void adding_wh(std::vector<t_physical_tile_type> &PhysicalTileTypes, std::vector
     }
 }
 
-void claster(std::vector<element> sample_elements){
-    int index_of_element = 0;
+void claster(std::vector<element> &sample_elements){
+    int i = 0;
     std::vector<element> temp;
 
     for (element &obj : sample_elements){
+        int index_of_element;
+        if (obj.name != "EMPTY" && obj.name != "io" && obj.name != "clb") {
+            if (obj.x.end_expr != none) {
+                index_of_element = i;
+                // the number of elements which consists in x,y axes
+                int length_x = (obj.x.end_expr - obj.x.start_expr) / obj.w;
+                int length_y = (obj.y.end_expr - obj.y.start_expr) / obj.h;
 
-        if (obj.x.end_expr != none ){
-            // the number of elements which consists in x,y axes
-            int length_x = (obj.x.end_expr-obj.x.start_expr)/obj.w;
-            int length_y = (obj.y.end_expr-obj.y.start_expr)/obj.h;
+                // the amount of elements in claster
+                int count = length_x * length_y;
 
-            // the amount of elements in claster
-            int count = length_x*length_y;
+                int x = 0, y = 0;
+                for (int num = 0; num < count; ++num) {
+                    element sub_element;
 
-            int x=0, y=0;
-            for (int num=0; num < count; ++num){
-                element sub_element;
+                    // adding constant parameters
+                    sub_element = obj;
+                    sub_element.name = obj.name;
+                    //                sub_element.w = obj.w;
+                    //                sub_element.h = obj.h;
+                    //                sub_element.x.repeat_expr = obj.x.repeat_expr;
+                    //                sub_element.y.repeat_expr = obj.y.repeat_expr;
 
-                // adding constant parameters
-                sub_element.name = obj.name;
-                sub_element.w = obj.w;
-                sub_element.h = obj.h;
-                sub_element.x.repeat_expr = obj.x.repeat_expr;
-                sub_element.y.repeat_expr = obj.y.repeat_expr;
+                    // adding variable parameters
+                    sub_element.x.start_expr = obj.x.start_expr + x * obj.w;
+                    sub_element.y.start_expr = obj.y.start_expr + y * obj.h;
 
-                // adding variable parameters
-                sub_element.x.start_expr = obj.x.start_expr + x*obj.w;
-                sub_element.y.start_expr = obj.y.start_expr + y*obj.h;
+                    x += 1;
+                    if (x * obj.w == length_x) {
+                        x = 0;
+                        y += 1;
+                    }
 
-
-                x+=1;
-                if (x*obj.w == length_x){
-                    x=0;
-                    y+=1;
+                    temp.push_back(sub_element);
                 }
-
-                temp.push_back(sub_element);
-
+                sample_elements.erase(sample_elements.begin() + index_of_element);
             }
-            sample_elements.erase(sample_elements.begin()+index_of_element);
+            i += 1;
         }
-        index_of_element+=1;
     }
 
     for (element &obj : temp){
@@ -175,12 +177,113 @@ void claster(std::vector<element> sample_elements){
 
 }
 
+void repeating(t_arch &arch, std::vector<element> &sample_elements){
+
+    std::vector<std::string> name_if_x;
+    std::vector<std::string> name_if_y;
+
+    // adding the names of duplicate elements
+    for (element &obj : sample_elements){
+        if (obj.name != "EMPTY" && obj.name != "io" && obj.name != "clb") {
+            if (obj.x.repeat_expr != none) {
+                name_if_x.push_back(obj.name);
+            }
+            if (obj.y.repeat_expr != none) {
+                name_if_y.push_back(obj.name);
+            }
+        }
+    }
+
+    if (!name_if_x.empty()){
+        int index_in_sample_el;
+        element temp;
+
+        // finding the name of the element
+        for (std::string &name : name_if_x) {
+            int index = 0;
+            std::vector<element> created_elements;
+            index_in_sample_el = 0;
+            for (element& obj : sample_elements) {
+                if (obj.name == name) {
+                    temp = obj;
+                    index_in_sample_el = index;
+                }
+                index += 1;
+            }
+
+            // the amount of repeating clasters
+            int count = (arch.grid_layouts[0].width - temp.x.start_expr) / temp.x.repeat_expr;
+
+            //assigning the appropriate coordinates
+            for (int i = 0; i < count; ++i) {
+                element temp_created_elements;
+
+                temp_created_elements = temp;
+                temp_created_elements.name = temp.name;
+
+                temp_created_elements.x.start_expr = temp_created_elements.x.start_expr + i * temp.x.repeat_expr;
+                temp_created_elements.x.end_expr = temp_created_elements.x.end_expr + i * temp.x.repeat_expr;
+
+                created_elements.push_back(temp_created_elements);
+            }
+            sample_elements.erase(sample_elements.begin()+index_in_sample_el);
+            for (element &obj : created_elements){
+                sample_elements.push_back(obj);
+            }
+        }
+
+    }
+
+    if (!name_if_y.empty()){
+        int index_in_sample_el;
+        element temp;
+
+
+        // finding the name of the element
+        for (std::string &name : name_if_y) {
+            int index = 0;
+            std::vector<element> created_elements;
+            index_in_sample_el = 0;
+            for (element& obj : sample_elements) {
+                if (obj.name == name) {
+                    temp = obj;
+                    index_in_sample_el = index;
+                }
+                index += 1;
+            }
+
+            // the amount of repeating clasters
+            int count = (arch.grid_layouts[0].height - temp.y.start_expr) / temp.y.repeat_expr;
+
+            //assigning the appropriate coordinates
+            for (int i = 0; i < count; ++i) {
+                element temp_created_elements;
+
+                temp_created_elements = temp;
+                temp_created_elements.name = temp.name;
+
+                temp_created_elements.y.start_expr = temp_created_elements.y.start_expr + i * temp.y.repeat_expr;
+                temp_created_elements.y.end_expr = temp_created_elements.y.end_expr + i * temp.y.repeat_expr;
+
+                created_elements.push_back(temp_created_elements);
+            }
+
+            sample_elements.erase(sample_elements.begin()+index_in_sample_el);
+            for (element &obj : created_elements){
+                sample_elements.push_back(obj);
+            }
+        }
+    }
+}
+
 void print_samples(const std::vector<element> &sample_elements){
+    int count = 0;
     std::cout << "**************************************" << std::endl;
     std::cout << "-----------sample_elements------------" << std::endl;
     std::cout << "**************************************" << std::endl;
     for (const element &obj : sample_elements){
-        printf("name: %s\n", obj.name.c_str());
+        printf("  %d\n", ++count);
+        printf("  name: %s\n", obj.name.c_str());
 
         try{
             printf("\t_startx: %d\n", obj.x.start_expr);
@@ -192,7 +295,7 @@ void print_samples(const std::vector<element> &sample_elements){
             printf("\t_endx: %d\n", obj.x.end_expr);
         }catch(const char *e){}
         try{
-            printf("\t_endy: %d\n\n", obj.y.end_expr);;
+            printf("\t_endy: %d\n\n", obj.y.end_expr);
         }catch(const char *e){}
 
         try{
@@ -225,11 +328,10 @@ int main() {
     arch_to_vector(arch, sample_elements);
     adding_wh(PhysicalTileTypes, sample_elements);
 
+    repeating(arch, sample_elements);
     claster(sample_elements);
-    
+
     print_samples(sample_elements);
-
-
 
     return 0;
 }
