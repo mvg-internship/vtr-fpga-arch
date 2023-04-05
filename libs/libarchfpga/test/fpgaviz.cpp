@@ -1,6 +1,7 @@
 #include <iostream>
 #include "read_xml_arch_file.h"
 #include "device_grid.h"
+#include "pugixml.hpp"
 
 enum{
     none = -1
@@ -70,6 +71,57 @@ void print_layout(const t_arch &arch){
             printf("\t_priority: %d\n", loc_def.priority);
         }
     }
+}
+
+void print_samples(const std::vector<element> &sample_elements){
+    int count = 0;
+    std::cout << "**************************************" << std::endl;
+    std::cout << "-----------sample_elements------------" << std::endl;
+    std::cout << "**************************************" << std::endl;
+    for (const element &obj : sample_elements){
+        printf("  %d\n", ++count);
+        printf("  name: %s\n", obj.name.c_str());
+
+        try{
+            printf("\t_startx: %d\n", obj.x.start_expr);
+        }catch(const char *e){}
+        try{
+            printf("\t_starty: %d\n\n", obj.y.start_expr);
+        }catch(const char *e){}
+        try{
+            printf("\t_endx: %d\n", obj.x.end_expr);
+        }catch(const char *e){}
+        try{
+            printf("\t_endy: %d\n\n", obj.y.end_expr);
+        }catch(const char *e){}
+
+        try{
+            printf("\t_repeatx: %d\n", obj.x.repeat_expr);
+        }catch(const char *e){}
+        try{
+            printf("\t_repeaty: %d\n\n", obj.y.repeat_expr);
+        }catch(const char *e){}
+
+    }
+}
+
+void print_file_xml(const std::vector<element> &sample_elements){
+    pugi::xml_document doc;
+    pugi::xml_node elements = doc.append_child("elements");
+
+    for (const element &obj : sample_elements){
+        pugi::xml_node element = elements.append_child("element");
+
+        element.append_attribute("id") = obj.id;
+
+        element.append_attribute("x") = obj.x.start_expr;
+        element.append_attribute("y") = obj.y.start_expr;
+
+        element.append_attribute("height") = obj.h;
+        element.append_attribute("width") = obj.w;
+    }
+
+    doc.save_file("output.xml");
 }
 
 bool try_catch(std::string &sample_el){
@@ -276,38 +328,6 @@ void repeating(t_arch &arch, std::vector<element> &sample_elements){
     }
 }
 
-void print_samples(const std::vector<element> &sample_elements){
-    int count = 0;
-    std::cout << "**************************************" << std::endl;
-    std::cout << "-----------sample_elements------------" << std::endl;
-    std::cout << "**************************************" << std::endl;
-    for (const element &obj : sample_elements){
-        printf("  %d\n", ++count);
-        printf("  name: %s\n", obj.name.c_str());
-
-        try{
-            printf("\t_startx: %d\n", obj.x.start_expr);
-        }catch(const char *e){}
-        try{
-            printf("\t_starty: %d\n\n", obj.y.start_expr);
-        }catch(const char *e){}
-        try{
-            printf("\t_endx: %d\n", obj.x.end_expr);
-        }catch(const char *e){}
-        try{
-            printf("\t_endy: %d\n\n", obj.y.end_expr);
-        }catch(const char *e){}
-
-        try{
-            printf("\t_repeatx: %d\n", obj.x.repeat_expr);
-        }catch(const char *e){}
-        try{
-            printf("\t_repeaty: %d\n\n", obj.y.repeat_expr);
-        }catch(const char *e){}
-
-    }
-}
-
 int main() {
     const char* arch_filename = "fixed_layout.xml";
 
@@ -332,6 +352,7 @@ int main() {
     claster(sample_elements);
 
     print_samples(sample_elements);
+    print_file_xml(sample_elements);
 
     return 0;
 }
