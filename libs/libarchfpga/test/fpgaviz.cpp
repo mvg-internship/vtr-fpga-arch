@@ -2,6 +2,11 @@
 #include "read_xml_arch_file.h"
 #include "device_grid.h"
 
+enum{
+    none = -1
+};
+
+
 struct parameters{
     int start_expr = -1;
     int repeat_expr = -1;
@@ -120,6 +125,56 @@ void adding_wh(std::vector<t_physical_tile_type> &PhysicalTileTypes, std::vector
     }
 }
 
+void claster(std::vector<element> sample_elements){
+    int index_of_element = 0;
+    std::vector<element> temp;
+
+    for (element &obj : sample_elements){
+
+        if (obj.x.end_expr != none ){
+            // the number of elements which consists in x,y axes
+            int length_x = (obj.x.end_expr-obj.x.start_expr)/obj.w;
+            int length_y = (obj.y.end_expr-obj.y.start_expr)/obj.h;
+
+            // the amount of elements in claster
+            int count = length_x*length_y;
+
+            int x=0, y=0;
+            for (int num=0; num < count; ++num){
+                element sub_element;
+
+                // adding constant parameters
+                sub_element.name = obj.name;
+                sub_element.w = obj.w;
+                sub_element.h = obj.h;
+                sub_element.x.repeat_expr = obj.x.repeat_expr;
+                sub_element.y.repeat_expr = obj.y.repeat_expr;
+
+                // adding variable parameters
+                sub_element.x.start_expr = obj.x.start_expr + x*obj.w;
+                sub_element.y.start_expr = obj.y.start_expr + y*obj.h;
+
+
+                x+=1;
+                if (x*obj.w == length_x){
+                    x=0;
+                    y+=1;
+                }
+
+                temp.push_back(sub_element);
+
+            }
+            sample_elements.erase(sample_elements.begin()+index_of_element);
+        }
+        index_of_element+=1;
+    }
+
+    for (element &obj : temp){
+        sample_elements.push_back(obj);
+    }
+
+}
+
 void print_samples(const std::vector<element> &sample_elements){
     std::cout << "**************************************" << std::endl;
     std::cout << "-----------sample_elements------------" << std::endl;
@@ -170,7 +225,10 @@ int main() {
     arch_to_vector(arch, sample_elements);
     adding_wh(PhysicalTileTypes, sample_elements);
 
+    claster(sample_elements);
+    
     print_samples(sample_elements);
+
 
 
     return 0;
