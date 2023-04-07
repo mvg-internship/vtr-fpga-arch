@@ -200,10 +200,6 @@ void claster(std::vector<element> &sample_elements){
                     // adding constant parameters
                     sub_element = obj;
                     sub_element.name = obj.name;
-                    //                sub_element.w = obj.w;
-                    //                sub_element.h = obj.h;
-                    //                sub_element.x.repeat_expr = obj.x.repeat_expr;
-                    //                sub_element.y.repeat_expr = obj.y.repeat_expr;
 
                     // adding variable parameters
                     sub_element.x.start_expr = obj.x.start_expr + x * obj.w;
@@ -461,6 +457,51 @@ void filling_others(t_arch &arch, std::vector<element> &sample_elements, std::ve
 
 }
 
+void assigning_coordinates (t_arch &arch, std::vector<element> &new_elements, std::vector<std::vector<element>> &grid){
+    int WIDTH = arch.grid_layouts[0].width;
+    int HEIGHT = arch.grid_layouts[0].height;
+
+    for (size_t i = 0; i < HEIGHT ; ++i ){
+        for (size_t j = 0; j < WIDTH ; ++j ){
+            element temp;
+            if (grid[i][j].x.start_expr != -1 && grid[i][j].y.start_expr !=-1){
+                temp = grid[i][j];
+                temp.x.start_expr = int(j);
+                temp.y.start_expr = int(i);
+                new_elements.push_back(temp);
+            }
+        }
+    }
+}
+
+void set_id(std::vector<element> &new_elements){
+    int id=0;
+    for (element &obj : new_elements){
+        obj.id = id;
+        id+=1;
+    }
+}
+
+void print_new_elements(std::vector<element> &new_elements){
+    std::cout << "**************************************" << std::endl;
+    std::cout << "-------------new_elements-------------" << std::endl;
+    std::cout << "**************************************" << std::endl;
+    for (const element &obj : new_elements){
+
+        printf("  name: %s\n", obj.name.c_str());
+
+        printf("\t_id: %d\n", obj.id);
+
+        printf("\t_startx: %d\n", obj.x.start_expr);
+        printf("\t_starty: %d\n", obj.y.start_expr);
+
+        printf("\t_h: %d\n", obj.h);
+        printf("\t_w: %d\n", obj.w);
+
+    }
+
+}
+
 void print_grid(std::vector<std::vector<element>> &grid){
     for (std::vector<element> &raw : grid){
         for(element& obj : raw){
@@ -486,6 +527,7 @@ int main(){
     print_layout(arch);
 
     std::vector<element> sample_elements;
+    std::vector<element> new_elements;
     std::vector<std::vector<element>> grid;
 
     arch_to_vector(arch, sample_elements);
@@ -504,6 +546,11 @@ int main(){
     filling_others(arch, sample_elements, grid);
 
     print_grid(grid);
+
+    assigning_coordinates(arch, new_elements, grid);
+    set_id(new_elements);
+
+    print_new_elements(new_elements);
 
     return 0;
 }
