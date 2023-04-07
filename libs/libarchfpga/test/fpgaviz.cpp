@@ -383,6 +383,38 @@ void filling_io(t_arch &arch, std::vector<element> &sample_elements, std::vector
     }
 }
 
+void filling_empty(t_arch &arch, std::vector<element> &sample_elements, std::vector<std::vector<element>> &grid){
+    int WIDTH = arch.grid_layouts[0].width;
+    int HEIGHT = arch.grid_layouts[0].height;
+
+    element none;
+    std::vector<element> empty_elements;
+
+    for (element& obj : sample_elements){
+        if(obj.name == "EMPTY"){
+            empty_elements.push_back(obj);
+        }
+    }
+
+    for (size_t i = 0; i < HEIGHT ; ++i ){
+        for (size_t j = 0; j < WIDTH ; ++j ){
+            for (element& obj : empty_elements){
+                if (obj.x.start_expr == 0 && obj.y.start_expr == 0)
+                    grid[HEIGHT-1][0] = obj;
+                else if (obj.x.start_expr == -1 && obj.y.start_expr == 0)
+                    grid[HEIGHT-1][WIDTH-1] = obj;
+                else if (obj.x.start_expr == 0 && obj.y.start_expr == -1)
+                    grid[0][0] = obj;
+                else if (obj.x.start_expr == -1 && obj.y.start_expr == -1)
+                    grid[0][WIDTH-1] = obj;
+                else
+                    grid[HEIGHT-1-obj.y.start_expr][obj.x.start_expr] = obj;
+            }
+        }
+    }
+
+}
+
 void print_grid(std::vector<std::vector<element>> &grid){
     for (std::vector<element> &raw : grid){
         for(element& obj : raw){
@@ -422,7 +454,7 @@ int main(){
     set_grid(arch, grid);
     filling_clb(sample_elements, grid);
     filling_io(arch, sample_elements, grid);
-
+    filling_empty(arch, sample_elements, grid);
 
     print_grid(grid);
 
