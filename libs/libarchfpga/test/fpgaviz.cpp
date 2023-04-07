@@ -415,6 +415,52 @@ void filling_empty(t_arch &arch, std::vector<element> &sample_elements, std::vec
 
 }
 
+void filling_others(t_arch &arch, std::vector<element> &sample_elements, std::vector<std::vector<element>> &grid){
+    int WIDTH = arch.grid_layouts[0].width;
+    int HEIGHT = arch.grid_layouts[0].height;
+
+    element none;
+    std::vector<element> other_elements;
+
+    for (element& obj : sample_elements){
+        if(obj.name != "EMPTY" && obj.name != "clb" && obj.name != "io"){
+            other_elements.push_back(obj);
+        }
+    }
+
+    for (size_t i = 0; i < HEIGHT ; ++i ){
+        for (size_t j = 0; j < WIDTH ; ++j ){
+            for (element& obj : other_elements){
+                if (obj.x.start_expr == j && obj.y.start_expr == (HEIGHT-i-1)){
+                    grid[HEIGHT-i-1][j] = obj;
+                    if (obj.h != 1){
+                        for (size_t h=0; h < obj.h; ++h){
+                            grid[HEIGHT-i+h][j] = none; //+1
+                            grid[HEIGHT-i+h][j].name = obj.name;
+                        }
+                    }
+                    else if (obj.w != 1){
+                        for (size_t w=0; w < obj.w; ++w){
+                            grid[HEIGHT-i-1][j+w+1] = none;
+                            grid[HEIGHT-i-1][j+w+1].name = obj.name;
+                        }
+                    }
+                    else{
+                        for (size_t h=0; h < obj.h; ++h){
+                            for (size_t w=0; w < obj.w; ++w){
+                                grid[HEIGHT-i+h-1][j+w+1] = none;
+                                grid[HEIGHT-i+h-1][j+w+1].name = obj.name;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+}
+
 void print_grid(std::vector<std::vector<element>> &grid){
     for (std::vector<element> &raw : grid){
         for(element& obj : raw){
@@ -455,6 +501,7 @@ int main(){
     filling_clb(sample_elements, grid);
     filling_io(arch, sample_elements, grid);
     filling_empty(arch, sample_elements, grid);
+    filling_others(arch, sample_elements, grid);
 
     print_grid(grid);
 
