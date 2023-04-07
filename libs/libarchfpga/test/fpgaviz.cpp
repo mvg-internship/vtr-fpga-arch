@@ -328,7 +328,33 @@ void repeating(t_arch &arch, std::vector<element> &sample_elements){
     }
 }
 
-int main() {
+void set_grid(t_arch &arch, std::vector<std::vector<element>> &grid){
+    element none;
+    int WIDTH = arch.grid_layouts[0].width;
+    int HEIGHT = arch.grid_layouts[0].height;
+
+    // grid initialization
+    for (int i = 0; i < HEIGHT; ++i){
+        std::vector<element> temp;
+        for (int j = 0; j < WIDTH; ++j){
+            temp.push_back(none);
+        }
+        grid.push_back(temp);
+    }
+}
+
+
+void print_grid(std::vector<std::vector<element>> &grid){
+    for (std::vector<element> &raw : grid){
+        for(element& obj : raw){
+            std::cout << obj.name << "| ";
+        }
+        std::cout << std::endl;
+    }
+}
+
+
+int main(){
     const char* arch_filename = "fixed_layout.xml";
 
     // Load architecture from XML file
@@ -353,6 +379,12 @@ int main() {
 
     print_samples(sample_elements);
     print_file_xml(sample_elements);
+
+    set_grid(arch, grid);
+
+    
+
+    print_grid(grid);
 
     return 0;
 }
