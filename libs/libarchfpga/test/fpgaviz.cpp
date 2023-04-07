@@ -361,6 +361,28 @@ void filling_clb(std::vector<element> &sample_elements, std::vector<std::vector<
 
 }
 
+void filling_io(t_arch &arch, std::vector<element> &sample_elements, std::vector<std::vector<element>> &grid){
+    int WIDTH = arch.grid_layouts[0].width;
+    int HEIGHT = arch.grid_layouts[0].height;
+
+    element none;
+    element io;
+
+    for (element& obj : sample_elements){
+        if(obj.name == "io"){
+            io = obj;
+            break;
+        }
+    }
+
+    for (size_t i = 0; i < size_t(HEIGHT) ; ++i ){
+        for (size_t j = 0; j < size_t(WIDTH) ; ++j ){
+            if (i==0 || i == (HEIGHT-1) || j==0 || j == (WIDTH-1))
+                grid[i][j] = io;
+        }
+    }
+}
+
 void print_grid(std::vector<std::vector<element>> &grid){
     for (std::vector<element> &raw : grid){
         for(element& obj : raw){
@@ -399,6 +421,7 @@ int main(){
 
     set_grid(arch, grid);
     filling_clb(sample_elements, grid);
+    filling_io(arch, sample_elements, grid);
 
 
     print_grid(grid);
