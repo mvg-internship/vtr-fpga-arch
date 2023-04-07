@@ -343,6 +343,23 @@ void set_grid(t_arch &arch, std::vector<std::vector<element>> &grid){
     }
 }
 
+void filling_clb(std::vector<element> &sample_elements, std::vector<std::vector<element>> &grid){
+    element clb;
+    std::vector<element> empty_elements;
+    for (element& obj : sample_elements){
+        if(obj.name == "clb"){
+            clb = obj;
+        }
+    }
+
+    for (std::vector<element> &raw : grid){
+        for (element &obj : raw){
+            obj = clb;
+        }
+    }
+
+
+}
 
 void print_grid(std::vector<std::vector<element>> &grid){
     for (std::vector<element> &raw : grid){
@@ -381,8 +398,8 @@ int main(){
     print_file_xml(sample_elements);
 
     set_grid(arch, grid);
+    filling_clb(sample_elements, grid);
 
-    
 
     print_grid(grid);
 
