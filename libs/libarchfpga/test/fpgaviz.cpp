@@ -170,9 +170,9 @@ void arch_to_vector(const t_arch &arch, std::vector<element> &sample_elements){
     for (element &obj : sample_elements){
         if (obj.name == "EMPTY"){
             if (obj.x.start_expr == -1)
-                obj.x.start_expr = (float)WIDTH-1;
+                obj.x.start_expr = (float)WIDTH;
             if (obj.y.start_expr == -1)
-                obj.y.start_expr = (float)HEIGHT-1;
+                obj.y.start_expr = (float)HEIGHT;
             if (obj.x.end_expr == -1)
                 obj.x.end_expr = none;
             if (obj.y.end_expr == -1)
@@ -197,16 +197,15 @@ void adding_wh(std::vector<t_physical_tile_type> &PhysicalTileTypes, std::vector
 }
 
 void claster(std::vector<element> &sample_elements){
-    std::vector<element> temp;
-    std::vector<element> claster_names;
     std::vector<element> divided_elements;
 
     for (element &sample_element : sample_elements){
+        auto index = sample_elements.begin();
+
         if (sample_element.name != "io" && sample_element.name != "clb") {
 
             if ((sample_element.x.end_expr != none && sample_element.y.end_expr != none) ||
                 (sample_element.x.end_expr != 0 && sample_element.y.end_expr != 0)) {
-                claster_names.push_back(sample_element);
 
                 // the number of elements which consists in x,y axes
                 float length_x = (sample_element.x.end_expr - sample_element.x.start_expr - 1) / sample_element.w;
@@ -228,7 +227,6 @@ void claster(std::vector<element> &sample_elements){
             }
 
             else if (sample_element.x.end_expr != none || sample_element.x.end_expr != 0 ) {
-                claster_names.push_back(sample_element);
 
                 // the amount of elements in claster
                 float num_elements = (sample_element.x.end_expr - sample_element.x.start_expr - 1) / sample_element.w;
@@ -242,10 +240,10 @@ void claster(std::vector<element> &sample_elements){
 
                     divided_elements.push_back(created_element);
                 }
+
             }
 
             else if (sample_element.y.end_expr != none || sample_element.y.end_expr != 0 ) {
-                claster_names.push_back(sample_element);
 
                 // the amount of elements in claster
                 float num_elements = (sample_element.y.end_expr - sample_element.y.start_expr - 1) / sample_element.h;
@@ -261,24 +259,25 @@ void claster(std::vector<element> &sample_elements){
                 }
             }
 
+
         }
     }
 
-    for (element &claster_name : claster_names){
+
+    for (element &divided_element : divided_elements){
         auto index = sample_elements.begin();
         for (element &sample_element : sample_elements){
-            if (sample_element.name == claster_name.name){
+            if (sample_element.x.start_expr == divided_element.x.start_expr &&
+                sample_element.y.start_expr == divided_element.y.start_expr &&
+                sample_element.x.end_expr == divided_element.x.end_expr &&
+                sample_element.y.end_expr == divided_element.y.end_expr){
                 sample_elements.erase(index);
             }
             ++index;
         }
     }
-    std::cout << "================SAMPLE_ELEMENTS_AFTER_DELETING===============" << std::endl;
-    print_samples(sample_elements);
-    std::cout << "================claster_names===============" << std::endl;
-    print_samples(claster_names);
-    for (element &obj : divided_elements){
-        sample_elements.push_back(obj);
+    for (element &divided_element : divided_elements){
+        sample_elements.push_back(divided_element);
     }
 
 }
@@ -638,12 +637,11 @@ int main(){
 
     adding_wh(PhysicalTileTypes, sample_elements); //tested
 
-    print_samples(sample_elements);
-    repeating(arch, sample_elements);
+    repeating(arch, sample_elements); //tested
     print_samples(sample_elements);
 
-//    claster(sample_elements);
-//    print_samples(sample_elements);
+    claster(sample_elements); //tested
+    print_samples(sample_elements);
 
 //    set_grid(arch, grid);
 //    std::cout << "*********************set_grid*************************" << std::endl;
