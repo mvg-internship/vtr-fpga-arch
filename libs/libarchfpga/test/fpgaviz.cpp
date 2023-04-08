@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cctype>
 #include "read_xml_arch_file.h"
 #include "device_grid.h"
 #include "pugixml.hpp"
@@ -9,10 +10,10 @@ enum{
 
 
 struct parameters{
-    int start_expr = -1;
-    int repeat_expr = -1;
-    int end_expr = -1;
-    int incr_expr = -1;
+    float start_expr = -1;
+    float repeat_expr = -1;
+    float end_expr = -1;
+    float incr_expr = -1;
 };
 
 struct element{
@@ -22,8 +23,8 @@ struct element{
 
     parameters x;
     parameters y;
-    int w = -1;
-    int h = -1;
+    float w = -1;
+    float h = -1;
 
 
 //    element(const int id, const std::string name, const std::string x,
@@ -83,36 +84,41 @@ void print_samples(const std::vector<element> &sample_elements){
         printf("  name: %s\n", obj.name.c_str());
 
         try{
-            printf("\t_startx: %d\n", obj.x.start_expr);
+            printf("\t_startx: %.1f\n", obj.x.start_expr);
         }catch(const char *e){}
         try{
-            printf("\t_starty: %d\n\n", obj.y.start_expr);
+            printf("\t_starty: %.1f\n\n", obj.y.start_expr);
         }catch(const char *e){}
         try{
-            printf("\t_endx: %d\n", obj.x.end_expr);
+            printf("\t_endx: %.1f\n", obj.x.end_expr);
         }catch(const char *e){}
         try{
-            printf("\t_endy: %d\n\n", obj.y.end_expr);
+            printf("\t_endy: %.1f\n\n", obj.y.end_expr);
         }catch(const char *e){}
 
         try{
-            printf("\t_repeatx: %d\n", obj.x.repeat_expr);
+            printf("\t_repeatx: %.1f\n", obj.x.repeat_expr);
         }catch(const char *e){}
         try{
-            printf("\t_repeaty: %d\n\n", obj.y.repeat_expr);
+            printf("\t_repeaty: %.1f\n\n", obj.y.repeat_expr);
         }catch(const char *e){}
+        printf("\t_w: %.1f\n", obj.w);
+        printf("\t_h: %.1f\n\n", obj.h);
 
     }
 }
 
-void print_file_xml(const std::vector<element> &sample_elements){
-    pugi::xml_document doc;
-    pugi::xml_node elements = doc.append_child("elements");
+void print_file_xml(const std::vector<element> &new_elements){
 
-    for (const element &obj : sample_elements){
+    pugi::xml_document doc;
+    pugi::xml_node logic_scheme = doc.append_child("logic_scheme");
+    pugi::xml_node elements = logic_scheme.append_child("elements");
+
+
+    for (const element &obj : new_elements){
         pugi::xml_node element = elements.append_child("element");
 
-        element.append_attribute("id") = obj.id;
+        element.append_attribute("e_id") = obj.id;
 
         element.append_attribute("x") = obj.x.start_expr;
         element.append_attribute("y") = obj.y.start_expr;
@@ -121,207 +127,279 @@ void print_file_xml(const std::vector<element> &sample_elements){
         element.append_attribute("width") = obj.w;
     }
 
-    doc.save_file("output.xml");
+    doc.save_file("/Users/fake.andrey/basicviz/basicviz/build/src/output.xml");
 }
 
-bool try_catch(std::string &sample_el){
-    bool result = false;
-    if (std::all_of(sample_el.begin(), sample_el.end(), :: isdigit)) {
-        result = true;
-    }
-    return result;
+bool try_catch(const std::string &sample_el){
+    return std::all_of(sample_el.begin(), sample_el.end(), :: isdigit);
 }
 
-void arch_to_vector(t_arch &arch, std::vector<element> &sample_elements){
+void arch_to_vector(const t_arch &arch, std::vector<element> &sample_elements){
+    int WIDTH = arch.grid_layouts[0].width;
+    int HEIGHT = arch.grid_layouts[0].height;
 
-    for (t_grid_def &layout : arch.grid_layouts){
-        for (t_grid_loc_def &sample_el : layout.loc_defs){
-
+    for (const t_grid_def &layout : arch.grid_layouts){
+        for (const t_grid_loc_def &sample_el : layout.loc_defs){
             element temp;
 
             temp.name = sample_el.block_type;
 
             if (try_catch(sample_el.x.start_expr))
-                temp.x.start_expr = stoi(sample_el.x.start_expr);
+                temp.x.start_expr = std::stof(sample_el.x.start_expr);
             if (try_catch(sample_el.x.end_expr))
-                temp.x.end_expr = stoi(sample_el.x.end_expr);
+                temp.x.end_expr = std::stof(sample_el.x.end_expr);
             if (try_catch(sample_el.x.incr_expr))
-                temp.x.incr_expr = stoi(sample_el.x.incr_expr);
+                temp.x.incr_expr = std::stof(sample_el.x.incr_expr);
             if (try_catch(sample_el.x.repeat_expr))
-                temp.x.repeat_expr = stoi(sample_el.x.repeat_expr);
+                temp.x.repeat_expr = std::stof(sample_el.x.repeat_expr);
 
             if (try_catch(sample_el.y.start_expr))
-                temp.y.start_expr = stoi(sample_el.y.start_expr);
+                temp.y.start_expr = std::stof(sample_el.y.start_expr);
             if (try_catch(sample_el.y.end_expr))
-                temp.y.end_expr = stoi(sample_el.y.end_expr);
+                temp.y.end_expr = std::stof(sample_el.y.end_expr);
             if (try_catch(sample_el.y.incr_expr))
-                temp.y.incr_expr = stoi(sample_el.y.incr_expr);
+                temp.y.incr_expr = std::stof(sample_el.y.incr_expr);
             if (try_catch(sample_el.y.repeat_expr))
-                temp.y.repeat_expr = stoi(sample_el.y.repeat_expr);
+                temp.y.repeat_expr = std::stof(sample_el.y.repeat_expr);
+
 
             sample_elements.push_back(temp);
         }
+    }
+
+    for (element &obj : sample_elements){
+        if (obj.name == "EMPTY"){
+            if (obj.x.start_expr == -1)
+                obj.x.start_expr = (float)WIDTH-1;
+            if (obj.y.start_expr == -1)
+                obj.y.start_expr = (float)HEIGHT-1;
+            if (obj.x.end_expr == -1)
+                obj.x.end_expr = none;
+            if (obj.y.end_expr == -1)
+                obj.y.end_expr = -1;
+        }
+
     }
 
 
 }
 
 void adding_wh(std::vector<t_physical_tile_type> &PhysicalTileTypes, std::vector<element> &sample_elements){
+
     for (element &element : sample_elements){
         for (t_physical_tile_type &physical_element : PhysicalTileTypes){
             if (element.name == physical_element.name){
-                element.w = physical_element.width;
-                element.h = physical_element.height;
+                element.w = (float) physical_element.width;
+                element.h = (float) physical_element.height;
             }
         }
     }
 }
 
 void claster(std::vector<element> &sample_elements){
-    int i = 0;
     std::vector<element> temp;
+    std::vector<element> claster_names;
+    std::vector<element> divided_elements;
 
-    for (element &obj : sample_elements){
-        int index_of_element;
-        if (obj.name != "EMPTY" && obj.name != "io" && obj.name != "clb") {
-            if (obj.x.end_expr != none) {
-                index_of_element = i;
+    for (element &sample_element : sample_elements){
+        if (sample_element.name != "io" && sample_element.name != "clb") {
+
+            if ((sample_element.x.end_expr != none && sample_element.y.end_expr != none) ||
+                (sample_element.x.end_expr != 0 && sample_element.y.end_expr != 0)) {
+                claster_names.push_back(sample_element);
+
                 // the number of elements which consists in x,y axes
-                int length_x = (obj.x.end_expr - obj.x.start_expr) / obj.w;
-                int length_y = (obj.y.end_expr - obj.y.start_expr) / obj.h;
+                float length_x = (sample_element.x.end_expr - sample_element.x.start_expr - 1) / sample_element.w;
+                float length_y = (sample_element.y.end_expr - sample_element.y.start_expr - 1) / sample_element.h;
+
+
+                for (int i = 0; i < (int)length_y; i+=(int)sample_element.h){
+                    for (int j = 0; j < (int)length_x; j+=(int)sample_element.w){
+                        element created_element;
+
+                        created_element = sample_element;
+                        created_element.x.start_expr = sample_element.x.start_expr + (float)j;
+                        created_element.y.start_expr = sample_element.y.start_expr + (float)i;
+
+                        divided_elements.push_back(created_element);
+                    }
+                }
+
+            }
+
+            else if (sample_element.x.end_expr != none || sample_element.x.end_expr != 0 ) {
+                claster_names.push_back(sample_element);
 
                 // the amount of elements in claster
-                int count = length_x * length_y;
+                float num_elements = (sample_element.x.end_expr - sample_element.x.start_expr - 1) / sample_element.w;
 
-                int x = 0, y = 0;
-                for (int num = 0; num < count; ++num) {
-                    element sub_element;
 
-                    // adding constant parameters
-                    sub_element = obj;
-                    sub_element.name = obj.name;
+                for (int i = 0; i < (int)num_elements; i+=(int)sample_element.w){
+                    element created_element;
 
-                    // adding variable parameters
-                    sub_element.x.start_expr = obj.x.start_expr + x * obj.w;
-                    sub_element.y.start_expr = obj.y.start_expr + y * obj.h;
+                    created_element = sample_element;
+                    created_element.x.start_expr = sample_element.x.start_expr + (float)i;
 
-                    x += 1;
-                    if (x * obj.w == length_x) {
-                        x = 0;
-                        y += 1;
-                    }
-
-                    temp.push_back(sub_element);
+                    divided_elements.push_back(created_element);
                 }
-                sample_elements.erase(sample_elements.begin() + index_of_element);
             }
-            i += 1;
+
+            else if (sample_element.y.end_expr != none || sample_element.y.end_expr != 0 ) {
+                claster_names.push_back(sample_element);
+
+                // the amount of elements in claster
+                float num_elements = (sample_element.y.end_expr - sample_element.y.start_expr - 1) / sample_element.h;
+
+
+                for (int i = 0; i < (int)num_elements; i+=(int)sample_element.h){
+                    element created_element;
+
+                    created_element = sample_element;
+                    created_element.y.start_expr = sample_element.y.start_expr + (float)i;
+
+                    divided_elements.push_back(created_element);
+                }
+            }
+
         }
     }
 
-    for (element &obj : temp){
+    for (element &claster_name : claster_names){
+        auto index = sample_elements.begin();
+        for (element &sample_element : sample_elements){
+            if (sample_element.name == claster_name.name){
+                sample_elements.erase(index);
+            }
+            ++index;
+        }
+    }
+    std::cout << "================SAMPLE_ELEMENTS_AFTER_DELETING===============" << std::endl;
+    print_samples(sample_elements);
+    std::cout << "================claster_names===============" << std::endl;
+    print_samples(claster_names);
+    for (element &obj : divided_elements){
         sample_elements.push_back(obj);
     }
 
 }
 
 void repeating(t_arch &arch, std::vector<element> &sample_elements){
+    int WIDTH = arch.grid_layouts[0].width;
+    int HEIGHT = arch.grid_layouts[0].height;
 
-    std::vector<std::string> name_if_x;
-    std::vector<std::string> name_if_y;
+    std::vector<element> temp;
 
     // adding the names of duplicate elements
     for (element &obj : sample_elements){
-        if (obj.name != "EMPTY" && obj.name != "io" && obj.name != "clb") {
-            if (obj.x.repeat_expr != none) {
-                name_if_x.push_back(obj.name);
-            }
-            if (obj.y.repeat_expr != none) {
-                name_if_y.push_back(obj.name);
-            }
+        if (obj.name != "io" && obj.name != "clb") {
+            temp.push_back(obj);
         }
     }
 
-    if (!name_if_x.empty()){
-        int index_in_sample_el;
-        element temp;
+    if (!temp.empty()){
 
         // finding the name of the element
-        for (std::string &name : name_if_x) {
-            int index = 0;
-            std::vector<element> created_elements;
-            index_in_sample_el = 0;
-            for (element& obj : sample_elements) {
-                if (obj.name == name) {
-                    temp = obj;
-                    index_in_sample_el = index;
+        for (element &obj : temp) {
+            std::vector<element> local_created_elements;
+
+            if ((obj.x.repeat_expr != -1.0 && obj.x.repeat_expr != 0) &&
+                (obj.y.repeat_expr != -1.0 && obj.y.repeat_expr != 0)){
+                int start_x = (int) obj.x.start_expr-1;
+                int repeat_x = (int) obj.x.repeat_expr;
+                int end_x = (int) obj.x.end_expr;
+
+                float difference_x = (float) (end_x - start_x);
+
+                int count_x = (WIDTH-start_x)/repeat_x;
+                int second_x = start_x + repeat_x;
+                int end_point_x = start_x + repeat_x*count_x;
+                if ((end_point_x+difference_x) >= (WIDTH-1))
+                    end_point_x = start_x + repeat_x*(count_x-1);
+
+                int start_y = (int) obj.y.start_expr - 1;
+                int repeat_y = (int) obj.y.repeat_expr;
+                int end_y = (int) obj.y.end_expr;
+
+                float difference_y = (float) (end_y - start_y);
+
+                int count_y = (HEIGHT-start_y)/repeat_y;
+                int second_y = start_y + repeat_y;
+                int end_point_y = start_y + repeat_y*count_y;
+                if ((end_point_y+difference_y) >= (HEIGHT-1))
+                    end_point_y = start_y + repeat_y*(count_y-1);
+
+
+                for (int i = second_y; i <= end_point_y; i+=repeat_y) {
+                    element temp_element_y_axis = obj;
+
+                    temp_element_y_axis.y.start_expr = (float)i;
+                    if (temp_element_y_axis.y.end_expr != 0 && temp_element_y_axis.x.end_expr != -1.0)
+                        temp_element_y_axis.y.end_expr = (float)i + difference_x;
+
+                    for (int j = second_x; j <= end_point_x; j += repeat_x) {
+                        element temp_element_x_axis = temp_element_y_axis;
+                        temp_element_x_axis.x.start_expr = (float)j;
+                        if (temp_element_x_axis.x.end_expr != 0 && temp_element_x_axis.x.end_expr != -1.0)
+                            temp_element_x_axis.x.end_expr = (float)j + difference_x;
+                        local_created_elements.push_back(temp_element_x_axis);
+                    }
                 }
-                index += 1;
             }
 
-            // the amount of repeating clasters
-            int count = (arch.grid_layouts[0].width - temp.x.start_expr) / temp.x.repeat_expr;
+            else if (obj.x.repeat_expr != -1.0 && obj.x.repeat_expr != 0){
+                int start_x = (int) obj.x.start_expr - 1;
+                int repeat_x = (int) obj.x.repeat_expr;
+                int end_x = (int) obj.x.end_expr;
 
-            //assigning the appropriate coordinates
-            for (int i = 0; i < count; ++i) {
-                element temp_created_elements;
+                float difference_x = (float) (end_x - start_x);
 
-                temp_created_elements = temp;
-                temp_created_elements.name = temp.name;
+                int count_x = (WIDTH-start_x)/repeat_x;
+                int second_point = start_x + repeat_x;
+                int end_point = start_x + repeat_x*count_x;
+                if ((end_point+difference_x) >= (WIDTH-1))
+                    end_point = start_x + repeat_x*(count_x-1);
 
-                temp_created_elements.x.start_expr = temp_created_elements.x.start_expr + i * temp.x.repeat_expr;
-                temp_created_elements.x.end_expr = temp_created_elements.x.end_expr + i * temp.x.repeat_expr;
 
-                created_elements.push_back(temp_created_elements);
+                for (int i = second_point; i <= end_point; i += repeat_x) {
+                    element temp_element_x_axis = obj;
+                    temp_element_x_axis.x.start_expr = (float)i;
+                    if (temp_element_x_axis.x.end_expr != 0 && temp_element_x_axis.x.end_expr != -1.0)
+                        temp_element_x_axis.x.end_expr = (float)i + difference_x;
+                    local_created_elements.push_back(temp_element_x_axis);
+                }
+
             }
-            sample_elements.erase(sample_elements.begin()+index_in_sample_el);
-            for (element &obj : created_elements){
-                sample_elements.push_back(obj);
+
+            else if (obj.y.repeat_expr != -1.0 && obj.y.repeat_expr != 0){
+                int start_y = (int) obj.y.start_expr - 1;
+                int repeat_y = (int) obj.y.repeat_expr;
+                int end_y = (int) obj.y.end_expr;
+
+                float difference_y = (float) (end_y - start_y);
+
+                int count_y = (HEIGHT-start_y)/repeat_y;
+                int second_y = start_y + repeat_y;
+                int end_point = start_y + repeat_y*count_y;
+                if ((end_point+difference_y) >= (HEIGHT-1))
+                    end_point = start_y + repeat_y*(count_y-1);
+
+
+                for (int i = second_y; i <= end_point; i += repeat_y) {
+                    element temp_element_y_axis = obj;
+                    temp_element_y_axis.y.start_expr = (float)i;
+                    if (temp_element_y_axis.x.end_expr != 0 && temp_element_y_axis.x.end_expr != -1.0)
+                        temp_element_y_axis.x.end_expr = (float)i + difference_y;
+                    local_created_elements.push_back(temp_element_y_axis);
+                }
+            }
+
+            if(!local_created_elements.empty()){
+                for (element &local_created_element : local_created_elements)
+                    sample_elements.push_back(local_created_element);
             }
         }
-
     }
 
-    if (!name_if_y.empty()){
-        int index_in_sample_el;
-        element temp;
-
-
-        // finding the name of the element
-        for (std::string &name : name_if_y) {
-            int index = 0;
-            std::vector<element> created_elements;
-            index_in_sample_el = 0;
-            for (element& obj : sample_elements) {
-                if (obj.name == name) {
-                    temp = obj;
-                    index_in_sample_el = index;
-                }
-                index += 1;
-            }
-
-            // the amount of repeating clasters
-            int count = (arch.grid_layouts[0].height - temp.y.start_expr) / temp.y.repeat_expr;
-
-            //assigning the appropriate coordinates
-            for (int i = 0; i < count; ++i) {
-                element temp_created_elements;
-
-                temp_created_elements = temp;
-                temp_created_elements.name = temp.name;
-
-                temp_created_elements.y.start_expr = temp_created_elements.y.start_expr + i * temp.y.repeat_expr;
-                temp_created_elements.y.end_expr = temp_created_elements.y.end_expr + i * temp.y.repeat_expr;
-
-                created_elements.push_back(temp_created_elements);
-            }
-
-            sample_elements.erase(sample_elements.begin()+index_in_sample_el);
-            for (element &obj : created_elements){
-                sample_elements.push_back(obj);
-            }
-        }
-    }
 }
 
 void set_grid(t_arch &arch, std::vector<std::vector<element>> &grid){
@@ -373,7 +451,7 @@ void filling_io(t_arch &arch, std::vector<element> &sample_elements, std::vector
 
     for (size_t i = 0; i < size_t(HEIGHT) ; ++i ){
         for (size_t j = 0; j < size_t(WIDTH) ; ++j ){
-            if (i==0 || i == (HEIGHT-1) || j==0 || j == (WIDTH-1))
+            if (i==0 || (int) i == (HEIGHT-1) || j==0 || (int) j == (WIDTH-1))
                 grid[i][j] = io;
         }
     }
@@ -404,7 +482,7 @@ void filling_empty(t_arch &arch, std::vector<element> &sample_elements, std::vec
                 else if (obj.x.start_expr == -1 && obj.y.start_expr == -1)
                     grid[0][WIDTH-1] = obj;
                 else
-                    grid[HEIGHT-1-obj.y.start_expr][obj.x.start_expr] = obj;
+                    grid[HEIGHT-1-obj.y.start_expr][(size_t)obj.x.start_expr] = obj;
             }
         }
     }
@@ -466,8 +544,12 @@ void assigning_coordinates (t_arch &arch, std::vector<element> &new_elements, st
             element temp;
             if (grid[i][j].x.start_expr != -1 && grid[i][j].y.start_expr !=-1){
                 temp = grid[i][j];
-                temp.x.start_expr = int(j);
-                temp.y.start_expr = int(i);
+                temp.x.start_expr = (float) j;
+                temp.y.start_expr = (float) i;
+//                temp.x.start_expr = (float) j/WIDTH;
+//                temp.y.start_expr = (float) i/HEIGHT;
+//                temp.w = (temp.w-0.2f)/WIDTH;
+//                temp.h = (temp.h-0.2f)/HEIGHT;
                 new_elements.push_back(temp);
             }
         }
@@ -492,11 +574,11 @@ void print_new_elements(std::vector<element> &new_elements){
 
         printf("\t_id: %d\n", obj.id);
 
-        printf("\t_startx: %d\n", obj.x.start_expr);
-        printf("\t_starty: %d\n", obj.y.start_expr);
+        printf("\t_startx: %f\n", obj.x.start_expr);
+        printf("\t_starty: %f\n", obj.y.start_expr);
 
-        printf("\t_h: %d\n", obj.h);
-        printf("\t_w: %d\n", obj.w);
+        printf("\t_h: %f\n", obj.h);
+        printf("\t_w: %f\n", obj.w);
 
     }
 
@@ -505,11 +587,33 @@ void print_new_elements(std::vector<element> &new_elements){
 void print_grid(std::vector<std::vector<element>> &grid){
     for (std::vector<element> &raw : grid){
         for(element& obj : raw){
-            std::cout << obj.name << "| ";
+            std::cout << obj.y.start_expr << " " << obj.x.start_expr << "|";
         }
         std::cout << std::endl;
     }
 }
+
+
+
+
+void print_new_elements_grid (t_arch &arch, std::vector<element> &new_elements){
+    int WIDTH = arch.grid_layouts[0].width;
+    int HEIGHT = arch.grid_layouts[0].height;
+
+    std::cout << "**************************************" << std::endl;
+    std::cout << "----------new_elements_grid-----------" << std::endl;
+    std::cout << "**************************************" << std::endl;
+    int size = new_elements.size();
+    for (size_t i=0; i < HEIGHT; ++i){
+        for (size_t j=0; j < WIDTH; ++j){
+            std::cout << new_elements[j+i*size].y.start_expr << " "
+                      << new_elements[j+i*size].x.start_expr << "|";
+        }
+        std::cout << std::endl;
+    }
+}
+
+
 
 
 int main(){
@@ -530,27 +634,50 @@ int main(){
     std::vector<element> new_elements;
     std::vector<std::vector<element>> grid;
 
-    arch_to_vector(arch, sample_elements);
-    adding_wh(PhysicalTileTypes, sample_elements);
+    arch_to_vector(arch, sample_elements); //tested
 
-    repeating(arch, sample_elements);
-    claster(sample_elements);
+    adding_wh(PhysicalTileTypes, sample_elements); //tested
 
     print_samples(sample_elements);
-    print_file_xml(sample_elements);
+    repeating(arch, sample_elements);
+    print_samples(sample_elements);
 
-    set_grid(arch, grid);
-    filling_clb(sample_elements, grid);
-    filling_io(arch, sample_elements, grid);
-    filling_empty(arch, sample_elements, grid);
-    filling_others(arch, sample_elements, grid);
+//    claster(sample_elements);
+//    print_samples(sample_elements);
 
-    print_grid(grid);
+//    set_grid(arch, grid);
+//    std::cout << "*********************set_grid*************************" << std::endl;
+//    print_grid(grid);
+//
+//    filling_clb(sample_elements, grid);
+//    std::cout << "*********************filling_clb*************************" << std::endl;
+//    print_grid(grid);
+//
+//    filling_io(arch, sample_elements, grid);
+//    std::cout << "*********************filling_io*************************" << std::endl;
+//    print_grid(grid);
+//
+//    filling_empty(arch, sample_elements, grid);
+//    std::cout << "*********************filling_empty*************************" << std::endl;
+//    print_grid(grid);
+//
+//
+//    filling_others(arch, sample_elements, grid);
+//    std::cout << "*********************filling_others*************************" << std::endl;
+//    print_grid(grid);
+//    std::cout << "**********************************************" << std::endl;
+//
+//    assigning_coordinates(arch, new_elements, grid);
+//    set_id(new_elements);
+//
+//    print_grid(grid);
+//
 
-    assigning_coordinates(arch, new_elements, grid);
-    set_id(new_elements);
 
-    print_new_elements(new_elements);
+//    print_new_elements_grid(arch, new_elements);
+
+//    print_new_elements(new_elements);
+//    print_file_xml(new_elements);
 
     return 0;
 }
