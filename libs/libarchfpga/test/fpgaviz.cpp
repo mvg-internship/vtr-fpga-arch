@@ -25,6 +25,7 @@ struct element{
     parameters y;
     float w = -1;
     float h = -1;
+    int priority = -1;
 
 
 //    element(const int id, const std::string name, const std::string x,
@@ -103,9 +104,20 @@ void print_samples(const std::vector<element> &sample_elements){
             printf("\t_repeaty: %.1f\n\n", obj.y.repeat_expr);
         }catch(const char *e){}
         printf("\t_w: %.1f\n", obj.w);
-        printf("\t_h: %.1f\n\n", obj.h);
+        printf("\t_h: %.1f\n", obj.h);
+        printf("\t_priority: %d\n\n", obj.priority);
 
     }
+}
+
+void print_element(const element temp){
+    printf("  name: %s\n", temp.name.c_str());
+
+    printf("\t_startx: %.1f\n", temp.x.start_expr);
+    printf("\t_starty: %.1f\n\n", temp.y.start_expr);
+    printf("\t_w: %.1f\n", temp.w);
+    printf("\t_h: %.1f\n", temp.h);
+    printf("\t_priority: %d\n\n", temp.priority);
 }
 
 void print_file_xml(const std::vector<element> &new_elements){
@@ -162,21 +174,18 @@ void arch_to_vector(const t_arch &arch, std::vector<element> &sample_elements){
             if (try_catch(sample_el.y.repeat_expr))
                 temp.y.repeat_expr = std::stof(sample_el.y.repeat_expr);
 
+            temp.priority = sample_el.priority;
 
             sample_elements.push_back(temp);
         }
     }
 
     for (element &obj : sample_elements){
-        if (obj.name == "EMPTY"){
+        if (obj.name == "EMPTY" && obj.priority == 101){
             if (obj.x.start_expr == -1)
                 obj.x.start_expr = (float)WIDTH;
             if (obj.y.start_expr == -1)
                 obj.y.start_expr = (float)HEIGHT;
-            if (obj.x.end_expr == -1)
-                obj.x.end_expr = none;
-            if (obj.y.end_expr == -1)
-                obj.y.end_expr = -1;
         }
 
     }
@@ -202,7 +211,7 @@ void claster(std::vector<element> &sample_elements){
     for (element &sample_element : sample_elements){
         auto index = sample_elements.begin();
 
-        if (sample_element.name != "io" && sample_element.name != "clb") {
+        if (sample_element.name != "io" && sample_element.name != "clb" && sample_element.priority!= 101) {
 
             if ((sample_element.x.end_expr != none && sample_element.y.end_expr != none) ||
                 (sample_element.x.end_expr != 0 && sample_element.y.end_expr != 0)) {
@@ -401,35 +410,46 @@ void repeating(t_arch &arch, std::vector<element> &sample_elements){
 
 }
 
-void set_grid(t_arch &arch, std::vector<std::vector<element>> &grid){
-    element none;
+//void set_grid(t_arch &arch, std::vector<std::vector<element>> &grid){
+//    element none;
+//    int WIDTH = arch.grid_layouts[0].width;
+//    int HEIGHT = arch.grid_layouts[0].height;
+//
+//    // grid initialization
+//    for (int i = 0; i < HEIGHT; ++i){
+//        std::vector<element> temp;
+//        for (int j = 0; j < WIDTH; ++j){
+//            temp.push_back(none);
+//        }
+//        grid.push_back(temp);
+//    }
+//}
+
+void filling_clb(t_arch &arch, std::vector<element> &sample_elements, std::vector<std::vector<element>> &grid){
+    element clb;
+    std::vector<element> empty_elements;
     int WIDTH = arch.grid_layouts[0].width;
     int HEIGHT = arch.grid_layouts[0].height;
 
-    // grid initialization
-    for (int i = 0; i < HEIGHT; ++i){
-        std::vector<element> temp;
-        for (int j = 0; j < WIDTH; ++j){
-            temp.push_back(none);
-        }
-        grid.push_back(temp);
-    }
-}
-
-void filling_clb(std::vector<element> &sample_elements, std::vector<std::vector<element>> &grid){
-    element clb;
-    std::vector<element> empty_elements;
     for (element& obj : sample_elements){
         if(obj.name == "clb"){
             clb = obj;
         }
     }
 
-    for (std::vector<element> &raw : grid){
-        for (element &obj : raw){
-            obj = clb;
+    for (int i = 0; i < HEIGHT; ++i){
+        std::vector<element> temp;
+        for (int j = 0; j < WIDTH; ++j){
+            temp.push_back(clb);
         }
+        grid.push_back(temp);
     }
+
+//    for (std::vector<element> &raw : grid){
+//        for (element &obj : raw){
+//            obj = clb;
+//        }
+//    }
 
 
 }
@@ -479,7 +499,7 @@ void filling_empty(t_arch &arch, std::vector<element> &sample_elements, std::vec
                     grid[0][0] = obj;
                 else if (obj.x.start_expr == WIDTH && obj.y.start_expr == HEIGHT)
                     grid[0][WIDTH-1] = obj;
-                else
+                else if (obj.priority != 101)
                     grid[HEIGHT-1-obj.y.start_expr][(size_t)obj.x.start_expr] = obj;
             }
         }
@@ -495,7 +515,7 @@ void filling_others(t_arch &arch, std::vector<element> &sample_elements, std::ve
     std::vector<element> other_elements;
 
     for (element& obj : sample_elements){
-        if(obj.name != "EMPTY" && obj.name != "clb" && obj.name != "io"){
+        if(obj.name != "io" && obj.name != "clb" && obj.name != "EMPTY"){
             other_elements.push_back(obj);
         }
     }
@@ -503,36 +523,33 @@ void filling_others(t_arch &arch, std::vector<element> &sample_elements, std::ve
     for (size_t i = 0; i < HEIGHT ; ++i ){
         for (size_t j = 0; j < WIDTH ; ++j ){
             for (element& obj : other_elements){
-
-                if ((float) j == obj.x.start_expr && i == (int) (HEIGHT-obj.y.start_expr)){
-                    grid[i][j] = obj;
-                    if (obj.h != 1){
-                        for (size_t h=0; h < obj.h; ++h){
-                            grid[i-h-1][j] = obj;
-                            grid[i-h-1][j].name = "child";
-//                            grid[i-h-1][j] = none; //+1
-//                            grid[i-h-1][j].name = obj.name;
-                        }
-                    }
-                    else if (obj.w != 1){
-                        for (size_t w=0; w < obj.w; ++w){
-                            grid[i-1][j+w+1] = obj;
-                            grid[i-1][j+w+1].name = "child";
-//                            grid[i-1][j+w+1] = none;
-//                            grid[i-1][j+w+1].name = obj.name;
-                        }
-                    }
-                    else if (obj.h != 1 && obj.w != 1) {
-
-                        for (size_t h=0; h < obj.h; ++h){
-                            for (size_t w=0; w < obj.w; ++w){
-                                grid[i-h-1][j+w+1] = obj;
-                                grid[i-h-1][j+w+1].name = "child";
-//                                grid[i-h-1][j+w+1] = none;
-//                                grid[i-h-1][j+w+1].name = obj.name;
+                if (obj.priority > grid[i][j].priority) {
+                    if ((float) j == obj.x.start_expr && i == (int) (HEIGHT-(int)obj.y.start_expr-1)){
+                            grid[i][j] = obj;
+                            if (obj.h != 1) {
+                               for (size_t h = 0; h < obj.h; ++h) {
+                                 grid[i - h - 1][j] = obj;
+                                    grid[i - h - 1][j].name = "child";
+                                //                            grid[i-h-1][j] = none; //+1
+                                //                            grid[i-h-1][j].name = obj.name;
+                              }
+                         } else if (obj.w != 1) {
+                                for (size_t w = 0; w < obj.w; ++w) {
+                                    grid[i - 1][j + w + 1] = obj;
+                                    grid[i - 1][j + w + 1].name = "child";
+                                //                            grid[i-1][j+w+1] = none;
+                                //                            grid[i-1][j+w+1].name = obj.name;
+                                }
+                            } else if (obj.h != 1 && obj.w != 1) {
+                                for (size_t h = 0; h < obj.h; ++h) {
+                                    for (size_t w = 0; w < obj.w; ++w) {
+                                        grid[i - h - 1][j + w + 1] = obj;
+                                        grid[i - h - 1][j + w + 1].name = "child";
+                                    //                                grid[i-h-1][j+w+1] = none;
+                                    //                                grid[i-h-1][j+w+1].name = obj.name;
+                                    }
+                                }
                             }
-                        }
-
                     }
 
 
@@ -547,6 +564,7 @@ void filling_others(t_arch &arch, std::vector<element> &sample_elements, std::ve
 void assigning_coordinates (t_arch &arch, std::vector<element> &new_elements, std::vector<std::vector<element>> &grid){
     int WIDTH = arch.grid_layouts[0].width;
     int HEIGHT = arch.grid_layouts[0].height;
+    float incr = 0.2;
 
     for (size_t i = 0; i < HEIGHT ; ++i ){
         for (size_t j = 0; j < WIDTH ; ++j ){
@@ -554,10 +572,11 @@ void assigning_coordinates (t_arch &arch, std::vector<element> &new_elements, st
 //            if (grid[i][j].x.start_expr != -1 && grid[i][j].y.start_expr !=-1){
             if (grid[i][j].name != "child"){
                 temp = grid[i][j];
-                temp.x.start_expr = (float) j/WIDTH;
-                temp.y.start_expr = (float) i/HEIGHT;
-                temp.w = (temp.w-0.2f)/WIDTH;
-                temp.h = (temp.h-0.2f)/HEIGHT;
+                temp.x.start_expr =  j/static_cast<float>(WIDTH);
+                temp.y.start_expr = i/static_cast<float>(HEIGHT);
+                temp.w = (temp.w-incr)/static_cast<float>(WIDTH);
+                temp.h = (temp.h-incr)/static_cast<float>(HEIGHT);
+//                print_element(temp);
                 new_elements.push_back(temp);
             }
         }
@@ -604,9 +623,18 @@ void print_grid(std::vector<std::vector<element>> &grid){
 void print_names_grid(std::vector<std::vector<element>> &grid){
     for (std::vector<element> &raw : grid){
         for(element& obj : raw){
-            std::cout << obj.name << " | ";
+            printf(" %s |", obj.name.c_str());
         }
-        std::cout << std::endl;
+        printf("\n");
+    }
+}
+
+void print_coordinates_grid(std::vector<std::vector<element>> &grid){
+    for (std::vector<element> &raw : grid){
+        for(element& obj : raw){
+            printf("%.1f %.1f |", obj.y.start_expr, obj.x.start_expr);
+        }
+        printf("\n");
     }
 }
 
@@ -655,14 +683,16 @@ int main(){
     print_samples(sample_elements);
 
     claster(sample_elements);
-    print_samples(sample_elements);
 
-    set_grid(arch, grid);
-    filling_clb(sample_elements, grid);
-    filling_others(arch, sample_elements, grid);
+
+//    set_grid(arch, grid);
+    filling_clb(arch, sample_elements, grid);
     filling_io(arch, sample_elements, grid);
     filling_empty(arch, sample_elements, grid);
+    filling_others(arch, sample_elements, grid);
+    print_coordinates_grid(grid);
 
+//    print_samples(sample_elements);
     assigning_coordinates(arch, new_elements, grid);
     set_id(new_elements);
 
