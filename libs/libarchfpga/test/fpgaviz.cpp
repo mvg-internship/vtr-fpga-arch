@@ -106,7 +106,6 @@ void print_samples(const std::vector<element> &sample_elements){
         printf("\t_w: %.1f\n", obj.w);
         printf("\t_h: %.1f\n", obj.h);
         printf("\t_priority: %d\n\n", obj.priority);
-
     }
 }
 
@@ -115,8 +114,10 @@ void print_element(const element &temp){
 
     printf("\t_startx: %.1f\n", temp.x.start_expr);
     printf("\t_starty: %.1f\n\n", temp.y.start_expr);
+
     printf("\t_w: %.1f\n", temp.w);
     printf("\t_h: %.1f\n", temp.h);
+
     printf("\t_priority: %d\n\n", temp.priority);
 }
 
@@ -125,7 +126,6 @@ void print_new_elements(const std::vector<element> &new_elements){
     std::cout << "-------------new_elements-------------" << std::endl;
     std::cout << "**************************************" << std::endl;
     for (const element &obj : new_elements){
-
         printf("  name: %s\n", obj.name.c_str());
 
         printf("\t_id: %d\n", obj.id);
@@ -135,9 +135,7 @@ void print_new_elements(const std::vector<element> &new_elements){
 
         printf("\t_h: %f\n", obj.h);
         printf("\t_w: %f\n", obj.w);
-
     }
-
 }
 
 void print_grid(const std::vector<std::vector<element>> &grid){
@@ -169,19 +167,19 @@ void print_coordinates_grid(const std::vector<std::vector<element>> &grid){
 
 
 //// required functions for data processing
-void parsing_file_xml(char *path, t_arch &arch, std::vector<t_physical_tile_type> &PhysicalTileTypes){
+void parsing_file_xml(const char *path, t_arch &arch, std::vector<t_physical_tile_type> &PhysicalTileTypes){
     const char* arch_filename = path;
     bool timing_enabled = true;
     std::vector<t_logical_block_type> LogicalBlockTypes;
     // parsing XML-file
     XmlReadArch(arch_filename, timing_enabled, &arch, PhysicalTileTypes, LogicalBlockTypes);
+
 }
 
-void print_file_xml(char *path_save, const std::vector<element> &new_elements){
+void print_file_xml(const char *path_save, const std::vector<element> &new_elements){
     pugi::xml_document doc;
     pugi::xml_node logic_scheme = doc.append_child("logic_scheme");
     pugi::xml_node elements = logic_scheme.append_child("elements");
-
 
     for (const element &obj : new_elements){
         pugi::xml_node element = elements.append_child("element");
@@ -246,7 +244,6 @@ void arch_to_vector(const t_arch &arch, std::vector<element> &sample_elements){
 
     }
 
-
 }
 
 void adding_wh(const std::vector<t_physical_tile_type> &PhysicalTileTypes, std::vector<element> &sample_elements){
@@ -291,7 +288,7 @@ void repeating(t_arch &arch, std::vector<element> &sample_elements){
                 int count_x = (WIDTH-start_x)/repeat_x;
                 int second_x = start_x + repeat_x;
                 int end_point_x = start_x + repeat_x*count_x;
-                if ((end_point_x+difference_x) >= (WIDTH-1))
+                if ((end_point_x+(int)difference_x) >= (WIDTH-1))
                     end_point_x = start_x + repeat_x*(count_x-1);
 
                 int start_y = (int) obj.y.start_expr - 1;
@@ -303,7 +300,7 @@ void repeating(t_arch &arch, std::vector<element> &sample_elements){
                 int count_y = (HEIGHT-start_y)/repeat_y;
                 int second_y = start_y + repeat_y;
                 int end_point_y = start_y + repeat_y*count_y;
-                if ((end_point_y+difference_y) >= (HEIGHT-1))
+                if ((end_point_y+(int)difference_y) >= (HEIGHT-1))
                     end_point_y = start_y + repeat_y*(count_y-1);
 
 
@@ -335,7 +332,7 @@ void repeating(t_arch &arch, std::vector<element> &sample_elements){
                 int count_x = (WIDTH-start_x)/repeat_x;
                 int second_point = start_x + repeat_x;
                 int end_point = start_x + repeat_x*count_x;
-                if ((end_point+difference_x) >= (WIDTH-1))
+                if ((end_point+(int)difference_x) >= (WIDTH-1))
                     end_point = start_x + repeat_x*(count_x-1);
 
 
@@ -360,7 +357,7 @@ void repeating(t_arch &arch, std::vector<element> &sample_elements){
                 int count_y = (HEIGHT-start_y)/repeat_y;
                 int second_y = start_y + repeat_y;
                 int end_point = start_y + repeat_y*count_y;
-                if ((end_point+difference_y) >= (HEIGHT-1))
+                if ((end_point+(int)difference_y) >= (HEIGHT-1))
                     end_point = start_y + repeat_y*(count_y-1);
 
 
@@ -380,7 +377,6 @@ void repeating(t_arch &arch, std::vector<element> &sample_elements){
             }
         }
     }
-
 }
 
 void cluster(std::vector<element> &sample_elements){
@@ -430,7 +426,6 @@ void cluster(std::vector<element> &sample_elements){
 
                     divided_elements.push_back(created_element);
                 }
-
             }
 
             // if the element occupies an area of more than one on y axis
@@ -454,7 +449,7 @@ void cluster(std::vector<element> &sample_elements){
         }
     }
 
-
+    // removing duplicate elements from the used array
     for (element &divided_element : divided_elements){
         auto index = sample_elements.begin();
         for (element &sample_element : sample_elements){
@@ -467,6 +462,8 @@ void cluster(std::vector<element> &sample_elements){
             ++index;
         }
     }
+
+    // adding created independent elements
     for (element &divided_element : divided_elements){
         sample_elements.push_back(divided_element);
     }
@@ -513,7 +510,8 @@ void filling_io(t_arch &arch, std::vector<element> &sample_elements, std::vector
     for (size_t i = 0; i < size_t(HEIGHT) ; ++i ){
         for (size_t j = 0; j < size_t(WIDTH) ; ++j ){
             if (i==0 || (int) i == (HEIGHT-1) || j==0 || (int) j == (WIDTH-1))
-                grid[i][j] = io;
+                if (grid[i][j].priority < io.priority)
+                    grid[i][j] = io;
         }
     }
 }
@@ -532,19 +530,21 @@ void filling_empty(t_arch &arch, std::vector<element> &sample_elements, std::vec
     }
 
     // filling the grid with EMPTY elements
-    for (size_t i = 0; i < HEIGHT ; ++i ){
-        for (size_t j = 0; j < WIDTH ; ++j ){
+    for (size_t i = 0; i < (size_t)HEIGHT ; ++i ){
+        for (size_t j = 0; j < (size_t)WIDTH ; ++j ){
             for (element& obj : empty_elements){
-                if (obj.x.start_expr == 0 && obj.y.start_expr == 0)
-                    grid[HEIGHT-1][0] = obj;
-                else if (obj.x.start_expr == WIDTH && obj.y.start_expr == 0)
-                    grid[HEIGHT-1][WIDTH-1] = obj;
-                else if (obj.x.start_expr == 0 && obj.y.start_expr == HEIGHT)
-                    grid[0][0] = obj;
-                else if (obj.x.start_expr == WIDTH && obj.y.start_expr == HEIGHT)
-                    grid[0][WIDTH-1] = obj;
-                else if (obj.priority != 101)
-                    grid[HEIGHT-1-obj.y.start_expr][(size_t)obj.x.start_expr] = obj;
+                if (grid[i][j].priority < obj.priority) {
+                    if (obj.x.start_expr == 0 && obj.y.start_expr == 0)
+                        grid[HEIGHT - 1][0] = obj;
+                    else if (obj.x.start_expr == (float)WIDTH && obj.y.start_expr == 0)
+                        grid[HEIGHT - 1][WIDTH - 1] = obj;
+                    else if (obj.x.start_expr == 0 && obj.y.start_expr == (float)HEIGHT)
+                        grid[0][0] = obj;
+                    else if (obj.x.start_expr == (float)WIDTH && obj.y.start_expr == (float)HEIGHT)
+                        grid[0][WIDTH - 1] = obj;
+                    else if (obj.priority != 101)
+                        grid[HEIGHT - 1 - (size_t)obj.y.start_expr][(size_t)obj.x.start_expr] = obj;
+                }
             }
         }
     }
@@ -565,24 +565,24 @@ void filling_others(t_arch &arch, std::vector<element> &sample_elements, std::ve
         }
     }
     // filling the grid with these elements
-    for (size_t i = 0; i < HEIGHT ; ++i ){
-        for (size_t j = 0; j < WIDTH ; ++j ){
+    for (size_t i = 0; i < (size_t)HEIGHT ; ++i ){
+        for (size_t j = 0; j < (size_t)WIDTH ; ++j ){
             for (element& obj : other_elements){
 
                 // checking for a conflict of priorities of elements that are located on the same tile
                 // "child" - is the area occupied by an element that has dimensions other than one
                 // "child" is needed to find the first occurrence of each independent element
-                if (obj.priority > grid[i][j].priority) {
-                    if ((float) j == obj.x.start_expr && i == (int) (HEIGHT-(int)obj.y.start_expr-1)){
+                if (grid[i][j].priority < obj.priority) {
+                    if ((float) j == obj.x.start_expr && i == (size_t) (HEIGHT-(int)obj.y.start_expr-1)){
                         grid[i][j] = obj;
 
                         // checking the area to be filled by an element by its height
                         if (obj.h != 1) {
                             grid[i][j].name = "child";
 
-                            for (size_t h = 0; h < obj.h-1; ++h) {
+                            for (size_t h = 0; h < (size_t)obj.h-1; ++h) {
                                 grid[i - h - 1][j] = obj;
-                                if(h != obj.h - 2)
+                                if(h != (size_t)(obj.h - 2))
                                     grid[i - h - 1][j].name = "child";
                             }
                         }
@@ -590,9 +590,9 @@ void filling_others(t_arch &arch, std::vector<element> &sample_elements, std::ve
                         else if (obj.w != 1) {
                             grid[i][j].name = "child";
 
-                            for (size_t w = 0; w < obj.w-1; ++w) {
+                            for (size_t w = 0; w < (size_t)obj.w-1; ++w) {
                                 grid[i - 1][j + w + 1] = obj;
-                                if(w != obj.w - 2)
+                                if(w != (size_t)(obj.w - 2))
                                     grid[i - 1][j + w + 1].name = "child";
                             }
                         }
@@ -601,10 +601,10 @@ void filling_others(t_arch &arch, std::vector<element> &sample_elements, std::ve
                         else if (obj.h != 1 && obj.w != 1) {
                             grid[i][j].name = "child";
 
-                            for (size_t h = 0; h < obj.h - 1; ++h) {
-                                for (size_t w = 0; w < obj.w - 1; ++w) {
+                            for (size_t h = 0; h < (size_t)obj.h - 1; ++h) {
+                                for (size_t w = 0; w < (size_t)obj.w - 1; ++w) {
                                     grid[i - h - 1][j + w + 1] = obj;
-                                    if(h != (obj.h - 2) && w != (obj.w - 2))
+                                    if(h != (size_t)(obj.h - 2) && w != (size_t)(obj.w - 2))
                                         grid[i - h - 1][j + w + 1].name = "child";
                                 }
                             }
@@ -617,7 +617,6 @@ void filling_others(t_arch &arch, std::vector<element> &sample_elements, std::ve
         }
     }
 
-
 }
 
 void assigning_coordinates (t_arch &arch, std::vector<element> &normalized_elements, std::vector<std::vector<element>> &grid){
@@ -626,16 +625,16 @@ void assigning_coordinates (t_arch &arch, std::vector<element> &normalized_eleme
     float incr = 0.2; // distance between adjacent elements (used for correct display)
 
     // assignment of new coordinates in accordance with the already received grid
-    for (size_t i = 0; i < HEIGHT ; ++i ){
-        for (size_t j = 0; j < WIDTH ; ++j ){
+    for (size_t i = 0; i < (size_t)HEIGHT ; ++i ){
+        for (size_t j = 0; j < (size_t)WIDTH ; ++j ){
             element temp;
             // "child" and EMPTY elements are not added to the list because they should not be drawn
             if (grid[i][j].name != "child" && grid[i][j].name != "EMPTY"){
                 temp = grid[i][j];
                 // normalization of coordinates in accordance with the requirements:
                 // x,y,w,h = [0; 1]
-                temp.x.start_expr =  j/static_cast<float>(WIDTH);
-                temp.y.start_expr = i/static_cast<float>(HEIGHT);
+                temp.x.start_expr =  (float)j/static_cast<float>(WIDTH);
+                temp.y.start_expr = (float)i/static_cast<float>(HEIGHT);
                 temp.w = (temp.w-incr)/static_cast<float>(WIDTH);
                 temp.h = (temp.h-incr)/static_cast<float>(HEIGHT);
                 normalized_elements.push_back(temp);
@@ -676,6 +675,7 @@ int main(int argc, char *argv[]){
     // filling the grid with processed data
     filling_clb(arch, sample_elements, grid);
     filling_io(arch, sample_elements, grid);
+    print_samples(sample_elements);
     filling_empty(arch, sample_elements, grid);
     filling_others(arch, sample_elements, grid);
 
