@@ -14,6 +14,14 @@ struct parameters {
     float repeat_expr = -1;
     float end_expr = -1;
     float incr_expr = -1;
+
+    parameters() = default;
+
+    parameters(const parameters& other)
+        : start_expr(other.start_expr),
+        repeat_expr(other.repeat_expr),
+        end_expr(other.end_expr),
+        incr_expr(other.incr_expr) {}
 };
 
 struct element {
@@ -27,9 +35,12 @@ struct element {
     float h = -1;
     int priority = -1;
 
-//    element(const int id, const std::string name, const std::string x,
-//            const std::string y, const std::string w, const std::string h)
-//        : id(id), name(name), x(x), y(y), w(w), h(h) {}
+    element() = default;
+
+    element(const element& other)
+        : id(other.id), name(other.name), x(other.x), y(other.y),
+        w(other.w), h(other.h), priority(other.priority) {}
+
 };
 
 // functions for testing and debugging
@@ -241,7 +252,6 @@ void arch_to_vector(const t_arch &arch, std::vector<element> &sample_elements) {
             if (obj.y.start_expr == -1)
                 obj.y.start_expr = (float) HEIGHT;
         }
-
     }
 }
 
@@ -282,7 +292,7 @@ void repeate(const t_arch &arch, std::vector<element> &sample_elements) {
                 int repeat_x = (int) obj.x.repeat_expr;
                 int end_x = (int) obj.x.end_expr;
 
-                float difference_x = (float) (end_x - start_x);
+                auto difference_x = (float) (end_x - start_x);
 
                 int count_x = (WIDTH - start_x) / repeat_x;
                 int second_x = start_x + repeat_x;
@@ -294,7 +304,7 @@ void repeate(const t_arch &arch, std::vector<element> &sample_elements) {
                 int repeat_y = (int) obj.y.repeat_expr;
                 int end_y = (int) obj.y.end_expr;
 
-                float difference_y = (float) (end_y - start_y);
+                auto difference_y = (float) (end_y - start_y);
 
                 int count_y = (HEIGHT - start_y) / repeat_y;
                 int second_y = start_y + repeat_y;
@@ -326,7 +336,7 @@ void repeate(const t_arch &arch, std::vector<element> &sample_elements) {
                 int repeat_x = (int) obj.x.repeat_expr;
                 int end_x = (int) obj.x.end_expr;
 
-                float difference_x = (float) (end_x - start_x);
+                auto difference_x = (float) (end_x - start_x);
 
                 int count_x = (WIDTH - start_x) / repeat_x;
                 int second_point = start_x + repeat_x;
@@ -351,7 +361,7 @@ void repeate(const t_arch &arch, std::vector<element> &sample_elements) {
                 int repeat_y = (int) obj.y.repeat_expr;
                 int end_y = (int) obj.y.end_expr;
 
-                float difference_y = (float) (end_y - start_y);
+                auto difference_y = (float) (end_y - start_y);
 
                 int count_y = (HEIGHT - start_y) / repeat_y;
                 int second_y = start_y + repeat_y;
@@ -398,9 +408,7 @@ void cluster(std::vector<element> &sample_elements) {
                 // (repetitions of width in x axis / height in y axis) contained on each axis
                 for (int i = 0; i < (int) length_y; i += (int) sample_element.h) {
                     for (int j = 0; j < (int) length_x; j += (int) sample_element.w) {
-                        element created_element;
-
-                        created_element = sample_element;
+                        element created_element(sample_element);
                         created_element.x.start_expr = sample_element.x.start_expr + (float) j;
                         created_element.y.start_expr = sample_element.y.start_expr + (float) i;
 
@@ -418,9 +426,7 @@ void cluster(std::vector<element> &sample_elements) {
                 //the division of this cluster by the number of elements
                 // (repetitions of width in x axis) contained on each axis
                 for (int i = 0; i < (int) num_elements; i += (int) sample_element.w) {
-                    element created_element;
-
-                    created_element = sample_element;
+                    element created_element(sample_element);
                     created_element.x.start_expr = sample_element.x.start_expr + (float) i;
 
                     divided_elements.push_back(created_element);
@@ -436,9 +442,7 @@ void cluster(std::vector<element> &sample_elements) {
                 //the division of this cluster by the number of elements
                 // (repetitions of height in y axis) contained on each axis
                 for (int i = 0; i < (int) num_elements; i += (int) sample_element.h) {
-                    element created_element;
-
-                    created_element = sample_element;
+                    element created_element(sample_element);
                     created_element.y.start_expr = sample_element.y.start_expr + (float) i;
 
                     divided_elements.push_back(created_element);
@@ -532,7 +536,7 @@ void fill_empty(const t_arch &arch, std::vector<element> &sample_elements, std::
         for (size_t j = 0; j < (size_t) WIDTH ; ++j) {
             for (element &obj : empty_elements){
                 if (grid[i][j].priority < obj.priority) {
-                    if (obj.x.start_expr == 0 && obj.y.start_expr == 0)
+                    if (obj.x.start_expr == (float) 0 && obj.y.start_expr == (float) 0)
                         grid[HEIGHT - 1][0] = obj;
                     else if (obj.x.start_expr == (float) WIDTH && obj.y.start_expr == 0)
                         grid[HEIGHT - 1][WIDTH - 1] = obj;
@@ -540,8 +544,6 @@ void fill_empty(const t_arch &arch, std::vector<element> &sample_elements, std::
                         grid[0][0] = obj;
                     else if (obj.x.start_expr == (float) WIDTH && obj.y.start_expr == (float) HEIGHT)
                         grid[0][WIDTH - 1] = obj;
-                    else if (obj.priority != 101)
-                        grid[HEIGHT - 1 - (size_t)obj.y.start_expr][(size_t)obj.x.start_expr] = obj;
                 }
             }
         }
@@ -648,7 +650,6 @@ void set_id(std::vector<element> &normalized_elements) {
         id += 1;
     }
 }
-
 
 int main(int argc, char *argv[]) {
     t_arch arch;
