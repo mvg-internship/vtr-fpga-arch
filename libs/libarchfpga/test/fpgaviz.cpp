@@ -14,7 +14,7 @@ struct parameters {
     float repeat_expr = -1;
     float end_expr = -1;
     float incr_expr = -1;
-
+  
     parameters() = default;
 
     parameters(const parameters& other)
@@ -40,7 +40,6 @@ struct element {
     element(const element& other)
         : id(other.id), name(other.name), x(other.x), y(other.y),
         w(other.w), h(other.h), priority(other.priority) {}
-
 };
 
 // functions for testing and debugging
@@ -409,6 +408,7 @@ void cluster(std::vector<element> &sample_elements) {
                 for (int i = 0; i < (int) length_y; i += (int) sample_element.h) {
                     for (int j = 0; j < (int) length_x; j += (int) sample_element.w) {
                         element created_element(sample_element);
+
                         created_element.x.start_expr = sample_element.x.start_expr + (float) j;
                         created_element.y.start_expr = sample_element.y.start_expr + (float) i;
 
@@ -427,6 +427,7 @@ void cluster(std::vector<element> &sample_elements) {
                 // (repetitions of width in x axis) contained on each axis
                 for (int i = 0; i < (int) num_elements; i += (int) sample_element.w) {
                     element created_element(sample_element);
+
                     created_element.x.start_expr = sample_element.x.start_expr + (float) i;
 
                     divided_elements.push_back(created_element);
@@ -443,6 +444,7 @@ void cluster(std::vector<element> &sample_elements) {
                 // (repetitions of height in y axis) contained on each axis
                 for (int i = 0; i < (int) num_elements; i += (int) sample_element.h) {
                     element created_element(sample_element);
+
                     created_element.y.start_expr = sample_element.y.start_expr + (float) i;
 
                     divided_elements.push_back(created_element);
@@ -537,6 +539,7 @@ void fill_empty(const t_arch &arch, std::vector<element> &sample_elements, std::
             for (element &obj : empty_elements){
                 if (grid[i][j].priority < obj.priority) {
                     if (obj.x.start_expr == (float) 0 && obj.y.start_expr == (float) 0)
+
                         grid[HEIGHT - 1][0] = obj;
                     else if (obj.x.start_expr == (float) WIDTH && obj.y.start_expr == 0)
                         grid[HEIGHT - 1][WIDTH - 1] = obj;
